@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UPP — 3D Editor + Excel Import</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    background:#070b14;color:#e6edf7;overflow:hidden}
+  .app{display:grid;grid-template-columns:440px 1fr;height:100vh}
+  .panel{background:#0b1220;border-right:1px solid #1b2740;padding:18px 18px 40px;overflow-y:auto}
+  .panel::-webkit-scrollbar{width:8px}
+  .panel::-webkit-scrollbar-thumb{background:#1e2d4a;border-radius:4px}
+  .panel h1{font-size:17px;margin:0 0 2px}
+  .panel h1 span{color:#34d399}
+  .panel .sub{font-size:11.5px;color:#7d8ba5;margin:0 0 18px}
+  .sec{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #141f33}
+  .sec:last-of-type{border-bottom:none}
+  .sec h2{font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;
+    color:#5f7391;margin:0 0 10px;font-weight:600}
+  label{display:block;font-size:11.5px;color:#8fa0bb;margin-bottom:4px}
+  input,select{width:100%;background:#0f1a2c;border:1px solid #1f2f4a;color:#e6edf7;
+    border-radius:8px;padding:9px 10px;font-size:13px;font-family:inherit;
+    outline:none;transition:.15s}
+  input:focus,select:focus{border-color:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.12)}
+  input[type=number]{-moz-appearance:textfield}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .mb{margin-bottom:10px}
+  .check{display:flex;align-items:center;gap:8px;font-size:12px;color:#9fb0c9;
+    margin:8px 0;cursor:pointer;user-select:none}
+  .check input{width:auto;accent-color:#34d399;cursor:pointer}
+  .btn{width:100%;border:none;border-radius:9px;padding:12px;font-size:13.5px;
+    font-weight:600;font-family:inherit;cursor:pointer;transition:.15s;
+    background:linear-gradient(135deg,#34d399,#0ea5e9);color:#04121a}
+  .btn:hover{filter:brightness(1.1)}
+  .btn:active{transform:scale(.985)}
+  .btn.sm{padding:9px;font-size:12px;border-radius:8px}
+  .btn.gray{background:#16233a;color:#9fb0c9;border:1px solid #2a3b5a}
+  .btn.gray:hover{background:#1e2d4a;color:#e6edf7}
+  .btn.red{background:#7f1d1d;color:#fecaca}
+  .btn.red:hover{background:#991b1b}
+  .btn.green{background:#065f46;color:#a7f3d0}
+  .btn.green:hover{background:#047857}
+  .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+  .btnrow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+  .note{font-size:10.5px;color:#5f7391;line-height:1.55;margin-top:10px}
+  .note code{background:#0f1a2c;padding:1px 4px;border-radius:4px;color:#7dd3fc;font-size:10px}
+
+  .chips{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .chip{background:#16233a;border:1px solid #2a3b5a;color:#9fb0c9;
+    font-size:11px;font-weight:600;padding:5px 11px;border-radius:20px;
+    cursor:pointer;font-family:inherit;transition:.15s}
+  .chip:hover{background:#1e2d4a;color:#e6edf7}
+  .chip.active{background:#34d399;color:#04121a;border-color:#34d399}
+
+  .align-chips{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+  .align-chip{background:#16233a;border:1px solid #2a3b5a;color:#9fb0c9;
+    font-size:11px;font-weight:600;padding:8px 6px;border-radius:8px;
+    cursor:pointer;font-family:inherit;transition:.15s;text-align:center}
+  .align-chip:hover{background:#1e2d4a;color:#e6edf7}
+  .align-chip.active{background:#34d399;color:#04121a;border-color:#34d399}
+  .align-chip .ic{display:block;font-size:14px;margin-bottom:3px}
+
+  .layer-seq{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;
+    padding:8px;background:#0a1422;border-radius:9px;border:1px solid #1f2f4a;
+    min-height:40px;align-items:flex-start;align-content:flex-start}
+  .layer-seq .lb{width:22px;height:22px;border-radius:5px;display:flex;
+    align-items:center;justify-content:center;font-size:10px;font-weight:700;
+    color:#04121a;transition:.15s;cursor:pointer}
+  .layer-seq .lb.a{background:#34d399}
+  .layer-seq .lb.b{background:#38bdf8}
+  .layer-seq .lb.off{background:#1e2d4a;color:#5f7391;font-weight:500;cursor:default}
+  .seq-legend{display:flex;justify-content:space-between;font-size:10px;
+    color:#5f7391;margin-top:5px}
+
+  .preview{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .pv{background:#0f1a2c;border:1px solid #1f2f4a;border-radius:9px;padding:8px}
+  .pv h4{margin:0 0 6px;font-size:10.5px;color:#7d8ba5;text-transform:uppercase;
+    letter-spacing:.6px;font-weight:600;display:flex;justify-content:space-between}
+  .pv h4 .badge{color:#34d399}
+  .pv h4 .badge.b{color:#38bdf8}
+  .pv canvas{display:block;width:100%;background:#0a1422;border-radius:5px}
+
+  /* import/export */
+  .drop{
+    border:2px dashed #2a3b5a;border-radius:11px;padding:18px 12px;
+    text-align:center;transition:.15s;cursor:pointer;background:#0a1422;
+    margin-top:8px;
+  }
+  .drop:hover, .drop.over{border-color:#34d399;background:#0d1b2e}
+  .drop .ic{font-size:24px;margin-bottom:6px}
+  .drop .t{font-size:12px;font-weight:600;color:#9fb0c9}
+  .drop .s{font-size:10.5px;color:#5f7391;margin-top:4px}
+  .fileinfo{
+    display:none;margin-top:8px;padding:9px 11px;background:#0f1a2c;
+    border:1px solid #1f2f4a;border-radius:8px;font-size:11.5px;
+    color:#9fb0c9;line-height:1.6;
+  }
+  .fileinfo.show{display:block}
+  .fileinfo b{color:#34d399}
+
+  .sel-info{background:#0f1a2c;border:1px solid #2a3b5a;border-radius:9px;
+    padding:10px 12px;font-size:11.5px;color:#9fb0c9;line-height:1.7;
+    margin-top:8px;display:none}
+  .sel-info.show{display:block;border-color:#fbbf24}
+  .sel-info .row{display:flex;justify-content:space-between}
+  .sel-info .row span:last-child{color:#e6edf7;font-weight:600}
+
+  .viewport{position:relative;background:#070b14;overflow:hidden}
+  .viewport canvas{display:block}
+  .viewport.editing{cursor:grabbing}
+
+  .hud{position:absolute;top:18px;left:18px;pointer-events:none;
+    display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .card{background:rgba(11,18,32,.82);backdrop-filter:blur(12px);
+    border:1px solid #1b2740;border-radius:14px;padding:14px 16px}
+  .upp-label{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f7391}
+  .upp-value{font-size:44px;font-weight:800;line-height:1;margin-top:4px;color:#34d399}
+  .upp-unit{font-size:12px;color:#7d8ba5;margin-left:6px;font-weight:500}
+  .upp-name{font-size:12px;color:#9fb0c9;margin-top:8px}
+  .upp-kode{display:inline-block;font-size:10px;font-weight:700;background:#132a3f;
+    color:#7dd3fc;padding:2px 7px;border-radius:5px;margin-right:6px;letter-spacing:.5px}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#1b2740;
+    border-radius:12px;overflow:hidden}
+  .stat{background:rgba(11,18,32,.9);padding:9px 12px}
+  .stat span{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;
+    color:#5f7391;margin-bottom:3px}
+  .stat b{font-size:15px;font-weight:700;color:#e6edf7}
+  .stat b.sm{font-size:12px}
+  .warn{font-size:11px;color:#fbbf24;background:rgba(251,191,36,.08);
+    border:1px solid rgba(251,191,36,.25);border-radius:9px;padding:8px 11px}
+
+  .viewbtns{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+    display:flex;gap:6px;background:rgba(11,18,32,.85);backdrop-filter:blur(12px);
+    border:1px solid #1b2740;border-radius:12px;padding:6px;flex-wrap:wrap;
+    justify-content:center;max-width:92vw}
+  .viewbtns button{background:transparent;border:none;color:#9fb0c9;font-size:11.5px;
+    font-weight:600;padding:8px 13px;border-radius:8px;cursor:pointer;
+    font-family:inherit;transition:.15s;white-space:nowrap}
+  .viewbtns button:hover{background:#16233a;color:#e6edf7}
+  .viewbtns button.on{background:#34d399;color:#04121a}
+
+  .toast{position:absolute;top:18px;left:50%;transform:translateX(-50%);
+    background:rgba(52,211,153,.95);color:#04121a;font-weight:700;
+    padding:9px 18px;border-radius:9px;font-size:12.5px;
+    opacity:0;transition:opacity .25s;pointer-events:none;z-index:100}
+  .toast.show{opacity:1}
+  .toast.err{background:rgba(251,113,133,.95)}
+
+  .hint{position:absolute;bottom:18px;right:18px;font-size:10.5px;color:#4a5a75;
+    text-align:right;line-height:1.7;pointer-events:none}
+  .hint b{color:#7d8ba5}
+  .hint kbd{background:#0f1a2c;border:1px solid #1f2f4a;border-radius:4px;
+    padding:1px 5px;color:#7dd3fc;font-size:9.5px;font-family:ui-monospace,monospace}
+
+  @media(max-width:900px){
+    .app{grid-template-columns:1fr;grid-template-rows:52vh 48vh}
+    .panel{border-right:none;border-bottom:1px solid #1b2740;padding:14px}
+    .hud{top:10px;left:10px;max-width:230px}
+    .upp-value{font-size:30px}
+    .viewbtns{bottom:10px;padding:4px}
+    .viewbtns button{padding:7px 9px;font-size:10.5px}
+    .hint{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="panel">
+    <h1>UPP <span>Calculator</span></h1>
+    <p class="sub">Excel import · editor 3D · silang karton</p>
+
+    <div class="sec">
+      <h2>📥 Import / Export Excel</h2>
+      <div class="btnrow">
+        <button class="btn sm green" id="btnDownloadTpl">↓ Template</button>
+        <button class="btn sm gray" id="btnExportAll">↑ Export Data</button>
+      </div>
+      <div class="drop" id="dropZone">
+        <div class="ic">📄</div>
+        <div class="t">Drop file Excel / CSV di sini</div>
+        <div class="s">atau klik untuk pilih file</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
+      </div>
+      <div class="fileinfo" id="fileInfo"></div>
+      <p class="note" style="margin-top:8px">
+        Kolom wajib: <code>KODE</code> <code>NAMA BARANG</code> <code>P</code> <code>L</code> <code>T</code>. Nama kolom fleksibel (Kode/KODE, Nama/NAMA BARANG, Panjang/P, Lebar/L, Tinggi/T).
+      </p>
+    </div>
+
+    <div class="sec">
+      <h2>Produk</h2>
+      <label>Cari dari daftar <span id="prodCount"></span></label>
+      <input id="productSearch" list="productList" placeholder="Ketik kode / nama produk…" autocomplete="off">
+      <datalist id="productList"></datalist>
+    </div>
+
+    <div class="sec">
+      <h2>Identitas</h2>
+      <div class="g2">
+        <div><label>Kode</label><input id="kode" value="DUD"></div>
+        <div><label>Nama Barang</label><input id="nama" value="DINOS-X PILLOW PACK 6 PLES"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Dimensi Karton (cm)</h2>
+      <div class="g3">
+        <div><label>P</label><input id="p" type="number" step="0.1" value="34.6"></div>
+        <div><label>L</label><input id="l" type="number" step="0.1" value="23.1"></div>
+        <div><label>T</label><input id="t" type="number" step="0.1" value="22.7"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Pallet</h2>
+      <div class="mb">
+        <label>Preset</label>
+        <select id="palletPreset">
+          <option value="130,130,140">130 × 130 cm — tinggi maks 140</option>
+          <option value="120,100,135" selected>120 × 100 cm — tinggi maks 135</option>
+          <option value="100,100,140">100 × 100 cm — tinggi maks 140</option>
+          <option value="120,120,140">120 × 120 cm — tinggi maks 140</option>
+          <option value="custom">Custom…</option>
+        </select>
+      </div>
+      <div class="g3">
+        <div><label>P pallet</label><input id="palletP" type="number" step="0.5" value="120"></div>
+        <div><label>L pallet</label><input id="palletL" type="number" step="0.5" value="100"></div>
+        <div><label>T maks</label><input id="palletH" type="number" step="0.5" value="135"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="inclPallet"> Tinggi maks. termasuk pallet (12 cm)</label>
+    </div>
+
+    <div class="sec">
+      <h2>Perataan (Align)</h2>
+      <div class="align-chips" id="alignChips">
+        <button class="align-chip active" data-align="both"><span class="ic">↔</span>Rata Kiri-Kanan</button>
+        <button class="align-chip" data-align="center"><span class="ic">⌖</span>Tengah</button>
+        <button class="align-chip" data-align="left"><span class="ic">⇤</span>Rata Kiri</button>
+        <button class="align-chip" data-align="right"><span class="ic">⇥</span>Rata Kanan</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Pola Layer — Custom</h2>
+      <div class="g2">
+        <div>
+          <label style="color:#34d399">● Slot A</label>
+          <select id="slotA">
+            <option value="auto">Auto — max pack</option>
+            <option value="silang-h" selected>✚ Silang Horizontal</option>
+            <option value="silang-v">✚ Silang Vertikal</option>
+            <option value="silang-hf">✚ Silang H — flip</option>
+            <option value="silang-vf">✚ Silang V — flip</option>
+            <option value="simple-p">Simple P</option>
+            <option value="simple-l">Simple L</option>
+            <option value="brick-1">Brick — start P</option>
+            <option value="brick-2">Brick — start L</option>
+            <option value="mixed">Mixed 2-zona</option>
+          </select>
+        </div>
+        <div>
+          <label style="color:#38bdf8">● Slot B</label>
+          <select id="slotB">
+            <option value="auto">Auto — max pack</option>
+            <option value="silang-h">✚ Silang Horizontal</option>
+            <option value="silang-v">✚ Silang Vertikal</option>
+            <option value="silang-hf" selected>✚ Silang H — flip</option>
+            <option value="silang-vf">✚ Silang V — flip</option>
+            <option value="simple-p">Simple P</option>
+            <option value="simple-l">Simple L</option>
+            <option value="brick-1">Brick — start P</option>
+            <option value="brick-2">Brick — start L</option>
+            <option value="mixed">Mixed 2-zona</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="margin-top:12px">Urutan Layer (A/B)</label>
+      <input id="sequence" value="AB" maxlength="60" placeholder="Contoh: ABAB, AABB, A" autocomplete="off">
+      <div class="chips" id="seqChips">
+        <button class="chip" data-seq="A">A</button>
+        <button class="chip active" data-seq="AB">AB</button>
+        <button class="chip" data-seq="AABB">AABB</button>
+        <button class="chip" data-seq="ABBA">ABBA</button>
+        <button class="chip" data-seq="AAB">AAB</button>
+        <button class="chip" data-seq="AAAB">AAAB</button>
+      </div>
+
+      <div class="preview">
+        <div class="pv">
+          <h4><span>Slot A</span><span class="badge" id="cntA">—</span></h4>
+          <canvas id="pvA" width="180" height="140"></canvas>
+        </div>
+        <div class="pv">
+          <h4><span>Slot B</span><span class="badge b" id="cntB">—</span></h4>
+          <canvas id="pvB" width="180" height="140"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>✎ Editor 3D</h2>
+      <p class="note" style="margin:0 0 10px">
+        Klik karton → pilih. Drag → geser. Space kosong → putar kamera.
+      </p>
+
+      <label class="check"><input type="checkbox" id="snapToggle" checked> Snap ke grid 1 cm</label>
+      <label class="check"><input type="checkbox" id="showBounds" checked> Tampilkan batas pallet</label>
+
+      <div class="btnrow3">
+        <button class="btn sm gray" id="btnRotate">⟳ Rotate</button>
+        <button class="btn sm gray" id="btnDup">⎘ Duplikat</button>
+        <button class="btn sm red" id="btnDel">✕ Hapus</button>
+      </div>
+      <div class="btnrow">
+        <button class="btn sm gray" id="btnAdd">+ Tambah</button>
+        <button class="btn sm" id="btnReset">⟲ Reset Auto</button>
+      </div>
+
+      <div class="sel-info" id="selInfo">
+        <div class="row"><span>Kode</span><span id="selKode">—</span></div>
+        <div class="row"><span>Layer</span><span id="selLayer">—</span></div>
+        <div class="row"><span>Posisi X, Z</span><span id="selPos">—</span></div>
+        <div class="row"><span>Ukuran</span><span id="selSize">—</span></div>
+        <div class="row"><span>Orientasi</span><span id="selOri">—</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="viewport" id="viewport">
+    <div class="hud">
+      <div class="card">
+        <div class="upp-label">UPP · Total Karton / Pallet</div>
+        <div><span class="upp-value" id="uppVal">—</span><span class="upp-unit">karton</span></div>
+        <div class="upp-name" id="uppName"></div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="warn" id="warn" style="display:none"></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="viewbtns">
+      <button data-view="iso" class="on">Isometrik</button>
+      <button data-view="front">Depan</button>
+      <button data-view="side">Samping</button>
+      <button data-view="back">Belakang</button>
+      <button data-view="top">Atas</button>
+      <button id="spin">⟳ Auto</button>
+    </div>
+
+    <div class="hint">
+      <b>Klik</b> karton → pilih &nbsp;·&nbsp; <b>Drag karton</b> → geser<br>
+      <b>Drag kosong</b> → putar kamera &nbsp;·&nbsp; <b>Scroll</b> → zoom<br>
+      <kbd>R</kbd> rotate &nbsp;<kbd>Del</kbd> hapus &nbsp;<kbd>Ctrl</kbd>+<kbd>D</kbd> dup &nbsp;<kbd>Esc</kbd> batal
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ============================================================
+   DATA PRODUK (default 103 SKU)
+   ============================================================ */
+let PRODUCTS = [
+["BUA","BABALOON 6 PLES",32.9,22,14.1],
+["BUB","BABALOON 18 PLES",27.1,26.9,22.7],
+["BUC","BABALOON 6 PLES",32.9,22,14.1],
+["CLD","COLLIN'S BUTTERNUT 28 BKS",35,20,22],
+["CLE","COLLIN'S ASSORTED 28 BKS",35,20,22],
+["CLG","COLLIN'S BUTTERNUT 6 PLES",40,27.5,19.2],
+["CLH","COLLIN'S ASSORTED 6 PLES",40,27.5,19.2],
+["CLJ","COLLIN'S BUTTERNUT 30 BKS",31.5,17.5,16.8],
+["CLK","COLLIN'S BUTTERNUT 9 PLES KTK",43.3,21,27.2],
+["CLM","COLLIN'S BUTTERNUT 20 BKS",25.5,18.5,15],
+["CLO","COLLIN'S BUTTERNUT 6 BKS",25.5,19.6,18.5],
+["CRA","CARABLO ASSORTED 8 PLES",41,21.2,19.8],
+["CUA","COLLIN'S BUTTERNUT 6 BKS",35.7,25,10.5],
+["CUG","COLLIN'S BUTTERNUT 6 PLES",40,27.5,19.2],
+["CUH","COLLIN'S ASSORTED 6 PLES",40,27.5,19.2],
+["CUJ","COLLIN'S BUTTERNUT 30 BKS",33.5,17.5,16.8],
+["CUM","COLLIN'S BUTTERNUT 20 BKS",25.4,17.9,14.7],
+["DND","DINOS-X ASSORTED PILLOW PACK 6 PLES",40,27.5,19.2],
+["DNE","DINOS-X 8 PLES",41,21.2,19.8],
+["DNG","DINOS-X 12 PLES",30.8,21.2,25.8],
+["DNH","DINOS-X ACID 6 PLES",34,23.5,21],
+["DUD","DINOS-X PILLOW PACK 6 PLES",34.6,23.1,22.7],
+["DUG","DINOS-X 6 PLES",39.5,26.5,18.2],
+["DUI","DINOS-X ASSORTED 6 PLES",39.5,26.5,18.2],
+["FUA","COFFEE CLUB 6 PLES TEKO",39.6,25.9,17.7],
+["FUB","COFFEE CLUB 30 BKS",35.6,24.4,17.7],
+["HCA","CHIKORY YOGURT 30 BKS",35.5,25,15],
+["HUA","CHIKORY YOGURT 30BKS",35.5,25,15],
+["JKA","JACKSON COKLATMINT 6 PLES",40,27.5,19.2],
+["JUA","JACKSON COKLATMINT 6 PLES",40.1,26.9,18.9],
+["KBA","KOBY ASSORTED 30 BKS",33,28.6,15.3],
+["KBB","KOBY ASSORTED 6 PLES",39.5,23.5,22],
+["LFA","LAZERY FW ASSORTED 12 PLES",30.8,21.4,22.5],
+["LGD","LONG BAR STRAWBERRY 9 DUS",31.5,16.6,20],
+["LGE","LONG BAR STRAWBERRY 6 PLES",34,23.5,14.6],
+["LGF","LONG BAR BLUEBERRY 6 PLES",34,23.5,14.6],
+["LGG","LONG BAR ASSORTED 30 BKS",23.5,18,14.5],
+["LU1","LAZERY JUMBO ASSORTED 6 PLES",34.3,22.8,22],
+["LU2","LAZERY STICK ASSORTED 8 DUS",32.6,19.4,12.7],
+["LU4","LAZERY JUMBO ASSORTED 28 BKS",35.4,25.4,10.7],
+["LU5","LAZERY JUMBO ASSORTED 12 PLES",30.3,20.2,24.8],
+["LU6","LAZERY JUMBO ASSORTED 28 BKS 112G",38,26,15.5],
+["LUA","LAZERY YOGURT 6 BKS",34.5,27,10.5],
+["LUB","LAZERY YOGURT 30 BKS",35.5,25,15],
+["LUC","LAZERY YOGURT 6 PLES",40.1,26.9,18.9],
+["LUD","LAZERY FRUITTI 40 BKS",34.5,27.5,16],
+["LUF","LAZERY FRUITTI 6 PLES",34,23.5,14.6],
+["LUG","LAZERY MINT 6 PLES",34,23.5,14.6],
+["LUH","LAZERY FW ASSORTED 6 PLES",32.9,22,14.1],
+["LUJ","LAZERY FW ASSORTED 30 BKS",35.8,26.8,11.5],
+["LUP","LAZERY STIK ASSORTED 6 PLES",34,23.5,14.6],
+["LUQ","LAZERY YOGURT 9 PLES KTK",43.3,21,27.2],
+["LUR","LAZERY STIK BLUEBERRY 8 DUS",32.6,19.4,12.7],
+["LUS","LAZERY STIK MANGO 8 DUS",32.6,19.4,12.7],
+["LUT","LAZERY STIK PINEAPPLE 8 DUS",32.6,19.4,12.7],
+["LUU","LAZERY STIK ORANGE 8 DUS",32.6,19.4,12.7],
+["LUV","LAZERY STIK STRAWBERRY 8 DUS",32.6,19.4,12.7],
+["LUW","LAZERY BAR ASSORTED 20 BKS",35.8,26.8,14.7],
+["LUX","LAZERY BAR ASSORTED 6 PLES",32.9,22,14.1],
+["LUY","LAZERY MILK ASSORTED 30 BKS",35.6,24.4,17.7],
+["LUZ","LAZERY MILK ASSORTED 6 PLES",40.1,26.9,18.9],
+["LZ5","LAZERY JUMBO ASSORTED 12 PLES",30.8,21.2,25.8],
+["LZ7","LAZERY FRUITTI 40 BKS",34.5,27.5,16.3],
+["LZ8","LAZERY FRUITTI 6 PLES",34,23.5,14.6],
+["LZA","LAZERY YOGURT 6 BKS",34.5,27,10.5],
+["LZB","LAZERY YOGURT 30 BKS",35.5,25,15],
+["LZC","LAZERY YOGURT 6 PLES",40,27.5,19.2],
+["LZE","LAZERY FRUITTI 16 BKS",51,37,30],
+["LZH","LAZERY FW ASSORTED 6 PLES",33.5,23,14],
+["LZI","LAZERY FW ASSORTED 8 DUS",42.7,19.8,20.5],
+["LZJ","LAZERY FW ASSORTED 30 BKS",26.9,26,11.8],
+["LZK","LAZERY STIK BLUEBERRY 12 DUS",29.5,13.5,15.3],
+["LZL","LAZERY STIK MANGO 12 DUS",29.5,13.5,15.3],
+["LZM","LAZERY STIK PINEAPPLE 12 DUS",29.5,13.5,15.3],
+["LZN","LAZERY STIK ORANGE 12 DUS",29.5,13.5,15.3],
+["LZO","LAZERY STIK STRAWBERRY 12 DUS",29.5,13.5,15.3],
+["LZP","LAZERY STIK ASSORTED 6 PLES",34,23.5,14.6],
+["LZZ","LAZERY MILK ASSORTED 6 PLES",40,27.5,19.2],
+["RGC","RINGGO ORANGE 16 DUS",26.7,21.5,13.1],
+["RGD","RINGGO STRAWBERRY 16 DUS",26.7,21.5,13.1],
+["SCA","SCOTT CHOCOLATE 12 PLES",30.8,21.2,21.8],
+["SCB","SCOTT CHOCOLATE 12 DUS",23.2,19,15],
+["SMA","SUPERMAX 6 PLES 2,6 G",30.8,21.2,13.5],
+["UIA","UNION ORANGE 30 BKS",31.5,17.5,16.8],
+["UIB","UNION MINT 30 BKS",31.5,17.5,16.8],
+["UIC","UNION ASSORTED 30 BKS",31.5,17.5,16.8],
+["UIG","UNION ORANGE 6 PLES",33.5,23,21],
+["UIH","UNION MINT 6 PLES",33.5,23,21],
+["UII","UNION ASSORTED 6 PLES",33.5,23,21],
+["UIJ","UNION DURIAN 6 PLES",33.5,23,21],
+["UIL","UNION GINGER COCONUT 6 PLES",34,23.5,14.6],
+["UIM","UNION CENTERFILLED FRUIT 8 PLES",41,21.2,19.8],
+["UIN","UNION CENTERFILLED FRUIT 30 BKS",37.5,20,20],
+["UIO","UNION GINGER COCONUT 24 BKS",31.5,24.5,15],
+["UIP","UNION GINGER COCONUT 6 PLES",34,23.5,14.6],
+["UIQ","UNION ORANGE 28 BKS",31.5,28,18],
+["UIR","UNION MINT 28 BKS",31.5,28,18],
+["UIS","UNION ASSORTED 28 BKS",31.5,28,18],
+["UIT","UN CENTERFILLED CHOCOMINT 8 PLES",41,21.2,19.8],
+["UIU","UNION GUMMY JELLY ASSORTED 8 PLES",41,21.2,19.8],
+["UME","UNION MINIDROP ASSORTED 20 BKS",39,29,17.5],
+["UMF","UNION MINIDROP ASSORTED 6 PLES",40,27.5,19.2]
+];
+
+/* ============================================================
+   PACKING
+   ============================================================ */
+const EPS = 1e-6, PALLET_H = 12;
+
+function horizLayout(W, totalW, nCols, align){
+  const extra = W - totalW;
+  if (nCols < 1) return { start: extra / 2, gap: 0 };
+  switch(align){
+    case 'left':  return { start: 0, gap: 0 };
+    case 'right': return { start: extra, gap: 0 };
+    case 'both':
+      if (nCols > 1) return { start: 0, gap: extra / (nCols - 1) };
+      return { start: extra / 2, gap: 0 };
+    default: return { start: extra / 2, gap: 0 };
+  }
+}
+
+function packZone(sx, sz, a, b, orient, align, ox, oz){
+  const cw = orient === 0 ? a : b, cd = orient === 0 ? b : a;
+  const cols = Math.floor((sx + EPS) / cw), rows = Math.floor((sz + EPS) / cd);
+  if (cols < 1 || rows < 1) return { count: 0, items: [] };
+  const totalW = cols * cw, totalD = rows * cd;
+  const { start: sx2, gap: gapX } = horizLayout(sx, totalW, cols, align);
+  const sz2 = (sz - totalD) / 2;
+  const items = [];
+  for (let i = 0; i < cols; i++)
+    for (let j = 0; j < rows; j++)
+      items.push({ x: ox + sx2 + i * (cw + gapX) + cw / 2, z: oz + sz2 + j * cd + cd / 2, w: cw, d: cd });
+  return { count: items.length, items };
+}
+
+function packSimple(W, D, a, b, orient, align){ return packZone(W, D, a, b, orient, align, 0, 0); }
+
+function packBrick(W, D, a, b, flip, align){
+  const items = []; let z = 0, rowIdx = flip ? 1 : 0;
+  const minDim = Math.min(a, b);
+  while (z < D - EPS){
+    const orient = rowIdx % 2;
+    const cw = orient === 0 ? a : b, cd = orient === 0 ? b : a;
+    const actualD = Math.min(cd, D - z);
+    if (actualD < minDim * 0.3) break;
+    const cols = Math.floor((W + EPS) / cw);
+    if (cols < 1) break;
+    const totalW = cols * cw;
+    const { start: sx, gap: gapX } = horizLayout(W, totalW, cols, align);
+    for (let i = 0; i < cols; i++)
+      items.push({ x: sx + i * (cw + gapX) + cw / 2, z: z + actualD / 2, w: cw, d: actualD });
+    if (actualD < cd - EPS) break;
+    z += actualD; rowIdx++;
+  }
+  return { count: items.length, items };
+}
+
+function packCrossH(W, D, a, b, align, oriTop){
+  const oriBot = 1 - oriTop;
+  let best = { count: 0, items: [] };
+  const cands = new Set();
+  for (let k = 1; k * a < D - EPS; k++) cands.add(k * a);
+  for (let k = 1; k * b < D - EPS; k++) cands.add(k * b);
+  for (const zs of cands){
+    const top = packZone(W, zs, a, b, oriTop, align, 0, 0);
+    const bot = packZone(W, D - zs, a, b, oriBot, align, 0, zs);
+    const total = top.count + bot.count;
+    if (total > best.count) best = { count: total, items: [...top.items, ...bot.items], meta:{axis:'H', z:zs} };
+  }
+  return best;
+}
+
+function packCrossV(W, D, a, b, align, oriLeft){
+  const oriRight = 1 - oriLeft;
+  let best = { count: 0, items: [] };
+  const cands = new Set();
+  for (let k = 1; k * a < W - EPS; k++) cands.add(k * a);
+  for (let k = 1; k * b < W - EPS; k++) cands.add(k * b);
+  for (const xs of cands){
+    const left = packZone(xs, D, a, b, oriLeft, align, 0, 0);
+    const right = packZone(W - xs, D, a, b, oriRight, align, xs, 0);
+    const total = left.count + right.count;
+    if (total > best.count) best = { count: total, items: [...left.items, ...right.items], meta:{axis:'V', x:xs} };
+  }
+  return best;
+}
+
+function packMixed(W, D, a, b, align){
+  let best = packSimple(W, D, a, b, 0, align);
+  const c = [packSimple(W, D, a, b, 1, align)];
+  const step = Math.min(a, b) / 2;
+  for (let zs = step; zs < D - EPS; zs += step){
+    const r1 = packZone(W, zs, a, b, 0, align, 0, 0);
+    const r2 = packZone(W, D - zs, a, b, 1, align, 0, zs);
+    c.push({ count: r1.count + r2.count, items: [...r1.items, ...r2.items] });
+    const r3 = packZone(W, zs, a, b, 1, align, 0, 0);
+    const r4 = packZone(W, D - zs, a, b, 0, align, 0, zs);
+    c.push({ count: r3.count + r4.count, items: [...r3.items, ...r4.items] });
+  }
+  for (let xs = step; xs < W - EPS; xs += step){
+    const r1 = packZone(xs, D, a, b, 0, align, 0, 0);
+    const r2 = packZone(W - xs, D, a, b, 1, align, xs, 0);
+    c.push({ count: r1.count + r2.count, items: [...r1.items, ...r2.items] });
+    const r3 = packZone(xs, D, a, b, 1, align, 0, 0);
+    const r4 = packZone(W - xs, D, a, b, 0, align, xs, 0);
+    c.push({ count: r3.count + r4.count, items: [...r3.items, ...r4.items] });
+  }
+  return c.reduce((b2, r) => r.count > b2.count ? r : b2, best);
+}
+
+function packByMode(W, D, a, b, mode, align){
+  switch(mode){
+    case 'simple-p': return packSimple(W, D, a, b, 0, align);
+    case 'simple-l': return packSimple(W, D, a, b, 1, align);
+    case 'brick-1':  return packBrick(W, D, a, b, false, align);
+    case 'brick-2':  return packBrick(W, D, a, b, true, align);
+    case 'mixed':    return packMixed(W, D, a, b, align);
+    case 'silang-h':  return packCrossH(W, D, a, b, align, 0);
+    case 'silang-hf': return packCrossH(W, D, a, b, align, 1);
+    case 'silang-v':  return packCrossV(W, D, a, b, align, 0);
+    case 'silang-vf': return packCrossV(W, D, a, b, align, 1);
+    default: {
+      const c = [
+        packSimple(W, D, a, b, 0, align), packSimple(W, D, a, b, 1, align),
+        packBrick(W, D, a, b, false, align), packBrick(W, D, a, b, true, align),
+        packMixed(W, D, a, b, align),
+        packCrossH(W, D, a, b, align, 0), packCrossH(W, D, a, b, align, 1),
+        packCrossV(W, D, a, b, align, 0), packCrossV(W, D, a, b, align, 1)
+      ];
+      return c.reduce((best, r) => r.count > best.count ? r : best);
+    }
+  }
+}
+
+/* ============================================================
+   THREE.JS
+   ============================================================ */
+let renderer, scene, camera, controls, world = null;
+let spinOn = false;
+
+const EDGE_MAT = new THREE.LineBasicMaterial({ color: 0x05101c, transparent: true, opacity: 0.75 });
+const MAT = {
+  aN : new THREE.MeshStandardMaterial({ color: 0x34d399, roughness: 0.62, metalness: 0.04 }),
+  aR : new THREE.MeshStandardMaterial({ color: 0x86efac, roughness: 0.62, metalness: 0.04 }),
+  bN : new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.62, metalness: 0.04 }),
+  bR : new THREE.MeshStandardMaterial({ color: 0xa78bfa, roughness: 0.62, metalness: 0.04 })
+};
+const SEL_MAT = new THREE.LineBasicMaterial({ color: 0xfbbf24 });
+
+let cartons = [];
+let selectedCarton = null;
+let selectionBox = null;
+let boundsBox = null;
+
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+const dragPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+const dragOffset = new THREE.Vector3();
+const intersect = new THREE.Vector3();
+let dragging = false;
+let pointerDownScreen = { x: 0, y: 0 };
+
+let snapGridOn = true;
+let showBounds = true;
+let currentLayout = null;
+
+function initThree(){
+  const vp = document.getElementById('viewport');
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(vp.clientWidth, vp.clientHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = false;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  vp.appendChild(renderer.domElement);
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x070b14);
+  scene.fog = new THREE.Fog(0x070b14, 900, 2600);
+
+  camera = new THREE.PerspectiveCamera(45, vp.clientWidth / vp.clientHeight, 1, 8000);
+  camera.position.set(260, 240, 320);
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.075;
+  controls.minDistance = 25;
+  controls.maxDistance = 2200;
+  controls.target.set(0, 70, 0);
+  controls.autoRotateSpeed = 1.4;
+
+  scene.add(new THREE.HemisphereLight(0xbfd6ff, 0x241c14, 1.15));
+  const key = new THREE.DirectionalLight(0xffffff, 2.1);
+  key.position.set(280, 460, 220);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.near = 50; key.shadow.camera.far = 1600;
+  const S = 340;
+  key.shadow.camera.left = -S; key.shadow.camera.right = S;
+  key.shadow.camera.top = S; key.shadow.camera.bottom = -S;
+  key.shadow.bias = -0.0016;
+  scene.add(key);
+
+  const rim = new THREE.DirectionalLight(0x6ea8ff, 0.75);
+  rim.position.set(-320, 230, -280);
+  scene.add(rim);
+
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(6000, 6000),
+    new THREE.MeshStandardMaterial({ color: 0x0c1524, roughness: 1, metalness: 0 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  const grid = new THREE.GridHelper(1600, 32, 0x1b3a5c, 0x122640);
+  grid.position.y = 0.06;
+  grid.material.transparent = true;
+  grid.material.opacity = 0.55;
+  scene.add(grid);
+
+  const selGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1));
+  selectionBox = new THREE.LineSegments(selGeo, SEL_MAT);
+  selectionBox.visible = false;
+  scene.add(selectionBox);
+
+  window.addEventListener('resize', onResize);
+  renderer.domElement.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('keydown', onKeyDown);
+
+  animate();
+}
+
+function onResize(){
+  const vp = document.getElementById('viewport');
+  camera.aspect = vp.clientWidth / vp.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(vp.clientWidth, vp.clientHeight);
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  controls.autoRotate = spinOn && !dragging;
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+function buildPallet(W, D, H){
+  const g = new THREE.Group();
+  const wood     = new THREE.MeshStandardMaterial({ color: 0xa9743f, roughness: 0.9, metalness: 0.03 });
+  const woodDark = new THREE.MeshStandardMaterial({ color: 0x7c5028, roughness: 0.95, metalness: 0.03 });
+  const deckT = 3, strH = H - deckT, strW = 10;
+  [-W/2 + strW/2, 0, W/2 - strW/2].forEach(x => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(strW, strH, D), woodDark);
+    m.position.set(x, strH / 2, 0);
+    m.castShadow = true; m.receiveShadow = true;
+    g.add(m);
+  });
+  const nB = 7, gapB = 2.5;
+  const bw = (D - (nB - 1) * gapB) / nB;
+  for (let i = 0; i < nB; i++){
+    const z = -D/2 + bw/2 + i * (bw + gapB);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(W, deckT, bw), wood);
+    m.position.set(0, strH + deckT / 2, z);
+    m.castShadow = true; m.receiveShadow = true;
+    g.add(m);
+  }
+  return g;
+}
+
+function buildBounds(W, D, H){
+  const pts = [
+    new THREE.Vector3(-W/2, H, -D/2), new THREE.Vector3( W/2, H, -D/2),
+    new THREE.Vector3( W/2, H,  D/2), new THREE.Vector3(-W/2, H,  D/2),
+    new THREE.Vector3(-W/2, H, -D/2)
+  ];
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineDashedMaterial({ color: 0xfbbf24, dashSize: 4, gapSize: 3, transparent: true, opacity: 0.7 });
+  const line = new THREE.Line(geo, mat);
+  line.computeLineDistances();
+  return line;
+}
+
+function disposeCarton(c){
+  if (c.mesh){ world.remove(c.mesh); c.geo.dispose(); }
+  if (c.edge){ world.remove(c.edge); c.edgeGeo.dispose(); }
+}
+
+function clearWorld(){
+  if (world){
+    scene.remove(world);
+    world.traverse(obj => { if (obj.geometry) obj.geometry.dispose(); });
+  }
+  world = null; cartons = []; selectedCarton = null;
+  if (selectionBox) selectionBox.visible = false;
+}
+
+function addCartonMesh(cfg){
+  const { x, z, w, d, layerIdx, pat, T, W, D } = cfg;
+  const gap = 0.45;
+  const geo = new THREE.BoxGeometry(Math.max(w - gap, 0.2), Math.max(T - gap, 0.2), Math.max(d - gap, 0.2));
+  const rotated = Math.abs(w - cfg.baseP) > 0.001;
+  let mat;
+  if (pat === 'A') mat = rotated ? MAT.aR : MAT.aN;
+  else             mat = rotated ? MAT.bR : MAT.bN;
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.userData.isCarton = true;
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  const y = PALLET_H + layerIdx * T + T / 2;
+  mesh.position.set(x - W / 2, y, z - D / 2);
+  world.add(mesh);
+
+  const edgeGeo = new THREE.EdgesGeometry(geo);
+  const edge = new THREE.LineSegments(edgeGeo, EDGE_MAT);
+  edge.position.copy(mesh.position);
+  world.add(edge);
+
+  const carton = { mesh, edge, geo, edgeGeo, layerIdx, pat, w, d, baseP: cfg.baseP, baseL: cfg.baseL, T };
+  cartons.push(carton);
+  return carton;
+}
+
+function rebuildScene(res){
+  clearWorld();
+  world = new THREE.Group();
+  scene.add(world);
+  const W = res.palletW, D = res.palletD;
+  world.add(buildPallet(W, D, PALLET_H));
+  if (boundsBox) { scene.remove(boundsBox); boundsBox = null; }
+  boundsBox = buildBounds(W, D, PALLET_H);
+  boundsBox.visible = showBounds;
+  scene.add(boundsBox);
+  for (let layer = 0; layer < res.layers; layer++){
+    const pat = res.layerAssignments[layer];
+    const layout = pat === 'A' ? res.layoutA : res.layoutB;
+    for (const it of layout.items){
+      addCartonMesh({
+        x: it.x, z: it.z, w: it.w, d: it.d,
+        layerIdx: layer, pat, T: res.cartonT, W, D,
+        baseP: res.cartonP, baseL: res.cartonL
+      });
+    }
+  }
+  renderer.shadowMap.needsUpdate = true;
+  updateUPPDisplay();
+}
+
+/* ============================================================
+   INTERACTION
+   ============================================================ */
+function setNDC(ev){
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+  ndc.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+}
+function cartonMeshes(){ return cartons.map(c => c.mesh); }
+function findCartonFromMesh(m){ return cartons.find(c => c.mesh === m); }
+
+function selectCarton(c){
+  selectedCarton = c;
+  if (!c){
+    selectionBox.visible = false;
+    document.getElementById('selInfo').classList.remove('show');
+    return;
+  }
+  const { mesh, w, d, T } = c;
+  selectionBox.scale.set(w + 0.3, T + 0.3, d + 0.3);
+  selectionBox.position.copy(mesh.position);
+  selectionBox.visible = true;
+  updateSelInfo(c);
+}
+
+function updateSelInfo(c){
+  const el = document.getElementById('selInfo');
+  if (!c){ el.classList.remove('show'); return; }
+  el.classList.add('show');
+  const W = currentLayout?.palletW ?? 0, D = currentLayout?.palletD ?? 0;
+  const lx = c.mesh.position.x + W / 2, lz = c.mesh.position.z + D / 2;
+  const rotated = Math.abs(c.w - c.baseP) > 0.001;
+  document.getElementById('selKode').textContent = document.getElementById('kode').value;
+  document.getElementById('selLayer').textContent = c.layerIdx + 1;
+  document.getElementById('selPos').textContent = `${lx.toFixed(1)}, ${lz.toFixed(1)}`;
+  document.getElementById('selSize').textContent = `${c.w.toFixed(1)} × ${c.d.toFixed(1)}`;
+  document.getElementById('selOri').textContent = rotated ? 'Rotasi' : 'Normal';
+}
+
+function toast(msg, err){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('err', !!err);
+  t.classList.add('show');
+  clearTimeout(toast._tid);
+  toast._tid = setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+function onPointerDown(ev){
+  if (ev.button !== 0) return;
+  setNDC(ev);
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(cartonMeshes(), false);
+  pointerDownScreen = { x: ev.clientX, y: ev.clientY };
+  if (hits.length > 0){
+    const c = findCartonFromMesh(hits[0].object);
+    if (c){
+      selectCarton(c);
+      dragging = true;
+      controls.enabled = false;
+      dragPlane.set(new THREE.Vector3(0,1,0), -c.mesh.position.y);
+      raycaster.ray.intersectPlane(dragPlane, intersect);
+      dragOffset.copy(c.mesh.position).sub(intersect);
+      dragOffset.y = 0;
+      document.getElementById('viewport').classList.add('editing');
+      return;
+    }
+  }
+}
+
+function onPointerMove(ev){
+  if (!dragging || !selectedCarton) return;
+  setNDC(ev);
+  raycaster.setFromCamera(ndc, camera);
+  if (!raycaster.ray.intersectPlane(dragPlane, intersect)) return;
+  const target = intersect.clone().add(dragOffset);
+  let nx = target.x, nz = target.z;
+  if (snapGridOn){ nx = Math.round(nx); nz = Math.round(nz); }
+  selectedCarton.mesh.position.x = nx;
+  selectedCarton.mesh.position.z = nz;
+  selectedCarton.edge.position.x = nx;
+  selectedCarton.edge.position.z = nz;
+  selectionBox.position.copy(selectedCarton.mesh.position);
+  updateSelInfo(selectedCarton);
+}
+
+function onPointerUp(ev){
+  document.getElementById('viewport').classList.remove('editing');
+  if (dragging){ dragging = false; controls.enabled = true; renderer.shadowMap.needsUpdate = true; return; }
+  const dx = ev.clientX - pointerDownScreen.x, dy = ev.clientY - pointerDownScreen.y;
+  if (dx*dx + dy*dy < 25){
+    setNDC(ev);
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObjects(cartonMeshes(), false);
+    if (hits.length === 0) selectCarton(null);
+  }
+}
+
+function onKeyDown(ev){
+  if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'SELECT' || ev.target.tagName === 'TEXTAREA') return;
+  if (ev.key === 'Escape'){ selectCarton(null); return; }
+  if (!selectedCarton) return;
+  if (ev.key === 'r' || ev.key === 'R'){ rotateSelected(); ev.preventDefault(); }
+  if (ev.key === 'Delete' || ev.key === 'Backspace'){ deleteSelected(); ev.preventDefault(); }
+  if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'd' || ev.key === 'D')){ dupSelected(); ev.preventDefault(); }
+}
+
+function rebuildCartonGeometry(c){
+  const gap = 0.45;
+  c.geo.dispose(); c.edgeGeo.dispose();
+  c.geo = new THREE.BoxGeometry(Math.max(c.w - gap, 0.2), Math.max(c.T - gap, 0.2), Math.max(c.d - gap, 0.2));
+  c.mesh.geometry = c.geo;
+  c.edgeGeo = new THREE.EdgesGeometry(c.geo);
+  c.edge.geometry = c.edgeGeo;
+  const rotated = Math.abs(c.w - c.baseP) > 0.001;
+  if (c.pat === 'A') c.mesh.material = rotated ? MAT.aR : MAT.aN;
+  else               c.mesh.material = rotated ? MAT.bR : MAT.bN;
+}
+
+function rotateSelected(){
+  const c = selectedCarton; if (!c) return;
+  [c.w, c.d] = [c.d, c.w];
+  rebuildCartonGeometry(c);
+  selectionBox.scale.set(c.w + 0.3, c.T + 0.3, c.d + 0.3);
+  updateSelInfo(c);
+  renderer.shadowMap.needsUpdate = true;
+  toast('Rotasi 90°');
+}
+function deleteSelected(){
+  const c = selectedCarton; if (!c) return;
+  disposeCarton(c);
+  cartons = cartons.filter(x => x !== c);
+  selectCarton(null);
+  renderer.shadowMap.needsUpdate = true;
+  updateUPPDisplay();
+  toast('Karton dihapus');
+}
+function dupSelected(){
+  const c = selectedCarton; if (!c) return;
+  const W = currentLayout.palletW, D = currentLayout.palletD;
+  const layoutX = c.mesh.position.x + W/2 + c.w + 1;
+  const layoutZ = c.mesh.position.z + D/2;
+  const nw = addCartonMesh({
+    x: layoutX, z: layoutZ, w: c.w, d: c.d,
+    layerIdx: c.layerIdx, pat: c.pat, T: c.T,
+    W, D, baseP: c.baseP, baseL: c.baseL
+  });
+  selectCarton(nw);
+  updateUPPDisplay();
+  toast('Duplikat');
+}
+function addFreeCarton(){
+  const P = parseFloat(document.getElementById('p').value);
+  const L = parseFloat(document.getElementById('l').value);
+  const T = parseFloat(document.getElementById('t').value);
+  const W = currentLayout.palletW, D = currentLayout.palletD;
+  const nw = addCartonMesh({
+    x: W/2, z: D/2, w: P, d: L,
+    layerIdx: 0, pat: 'A', T, W, D, baseP: P, baseL: L
+  });
+  selectCarton(nw);
+  updateUPPDisplay();
+  toast('Karton baru');
+}
+
+function updateUPPDisplay(){
+  document.getElementById('uppVal').textContent = cartons.length.toLocaleString('id-ID');
+}
+function fmt(n, d = 1){
+  return n.toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const num = id => { const v = parseFloat($(id).value); return isFinite(v) ? v : NaN; };
+let ALIGN = 'both';
+
+function refreshProductList(){
+  const dl = $('productList');
+  dl.innerHTML = '';
+  PRODUCTS.forEach(([k, n, p, l, t]) => {
+    const o = document.createElement('option');
+    o.value = `${k} — ${n}`;
+    o.label = `${p} × ${l} × ${t} cm`;
+    dl.appendChild(o);
+  });
+  $('prodCount').textContent = `(${PRODUCTS.length})`;
+}
+
+refreshProductList();
+
+/* ============================================================
+   📥 EXCEL / CSV IMPORT & EXPORT
+   ============================================================ */
+
+/** Normalisasi header supaya matching fleksibel */
+function normHeader(s){
+  return String(s || '').toUpperCase()
+    .replace(/[\s_.\-]+/g,'')
+    .trim();
+}
+
+const HEADER_MAP = {
+  'KODE': 'kode', 'KODEBARANG': 'kode', 'SKU': 'kode', 'CODE': 'kode',
+  'NAMA': 'nama', 'NAMABARANG': 'nama', 'PRODUK': 'nama', 'NAMAPRODUK': 'nama',
+  'NAME': 'nama', 'ITEM': 'nama',
+  'P': 'p', 'PANJANG': 'p', 'LENGTH': 'p',
+  'L': 'l', 'LEBAR': 'l', 'WIDTH': 'l',
+  'T': 't', 'TINGGI': 't', 'HEIGHT': 't'
+};
+
+/** Baca workbook (dari array buffer) → array produk baru */
+function parseWorkbook(data){
+  const wb = XLSX.read(data, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  if (!rows || rows.length < 2) throw new Error('File kosong atau tidak ada data.');
+
+  // Cari baris header (biasanya baris pertama)
+  const header = rows[0].map(normHeader);
+  const cols = { kode:-1, nama:-1, p:-1, l:-1, t:-1 };
+  header.forEach((h, i) => {
+    const key = HEADER_MAP[h];
+    if (key && cols[key] === -1) cols[key] = i;
+  });
+
+  if (cols.kode < 0 || cols.p < 0 || cols.l < 0 || cols.t < 0){
+    throw new Error('Header wajib: KODE, P, L, T (kolom NAMA opsional).');
+  }
+
+  const out = [];
+  for (let i = 1; i < rows.length; i++){
+    const r = rows[i];
+    if (!r || r.length === 0) continue;
+    const kode = String(r[cols.kode] ?? '').trim();
+    if (!kode) continue;
+    const nama = cols.nama >= 0 ? String(r[cols.nama] ?? '').trim() : kode;
+    const p = parseFloat(String(r[cols.p]).replace(',', '.'));
+    const l = parseFloat(String(r[cols.l]).replace(',', '.'));
+    const t = parseFloat(String(r[cols.t]).replace(',', '.'));
+    if (!isFinite(p) || !isFinite(l) || !isFinite(t)) continue;
+    if (p <= 0 || l <= 0 || t <= 0) continue;
+    out.push([kode, nama || kode, p, l, t]);
+  }
+  return out;
+}
+
+/** Merge produk baru ke PRODUCTS (replace kalau kode sama) */
+function mergeProducts(newItems){
+  const map = new Map();
+  PRODUCTS.forEach(p => map.set(p[0], p));
+  newItems.forEach(p => map.set(p[0], p));
+  PRODUCTS = Array.from(map.values());
+  // sort by kode
+  PRODUCTS.sort((a,b) => a[0].localeCompare(b[0]));
+  refreshProductList();
+}
+
+/** Download template Excel */
+function downloadTemplate(){
+  const header = ['KODE', 'NAMA BARANG', 'P', 'L', 'T'];
+  const contoh = [
+    ['CONTOH1', 'PRODUK BARU 6 PLES', 32.9, 22, 14.1],
+    ['CONTOH2', 'PRODUK BARU 30 BKS', 35, 25, 15],
+    ['CONTOH3', 'PRODUK CONTOH LAIN', 40, 27.5, 19.2]
+  ];
+
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Template kosong + contoh
+  const wsTpl = XLSX.utils.aoa_to_sheet([header, ...contoh]);
+  wsTpl['!cols'] = [{wch:12}, {wch:36}, {wch:8}, {wch:8}, {wch:8}];
+  XLSX.utils.book_append_sheet(wb, wsTpl, 'Template');
+
+  // Sheet 2: Semua produk existing (bonus, sebagai referensi)
+  const wsAll = XLSX.utils.aoa_to_sheet([header, ...PRODUCTS]);
+  wsAll['!cols'] = [{wch:12}, {wch:36}, {wch:8}, {wch:8}, {wch:8}];
+  XLSX.utils.book_append_sheet(wb, wsAll, 'Semua Produk');
+
+  // Sheet 3: Petunjuk
+  const petunjuk = [
+    ['PETUNJUK PENGGUNAAN TEMPLATE'],
+    [''],
+    ['1. Isi kolom di sheet "Template" sesuai header:'],
+    ['   - KODE       : kode unik produk (wajib)'],
+    ['   - NAMA BARANG: nama produk'],
+    ['   - P (cm)     : panjang karton'],
+    ['   - L (cm)     : lebar karton'],
+    ['   - T (cm)     : tinggi karton'],
+    [''],
+    ['2. Jangan mengubah nama kolom header (baris 1).'],
+    [''],
+    ['3. Simpan sebagai .xlsx atau .csv, lalu upload di aplikasi.'],
+    [''],
+    ['4. Produk dengan KODE yang sama akan ditimpa (replace).'],
+    ['5. Sheet "Semua Produk" berisi semua produk bawaan sebagai referensi.']
+  ];
+  const wsPet = XLSX.utils.aoa_to_sheet(petunjuk);
+  wsPet['!cols'] = [{wch:60}];
+  XLSX.utils.book_append_sheet(wb, wsPet, 'Petunjuk');
+
+  XLSX.writeFile(wb, `Template_UPP_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Template berhasil diunduh');
+}
+
+/** Export semua produk saat ini ke Excel */
+function exportAllProducts(){
+  const header = ['KODE', 'NAMA BARANG', 'P', 'L', 'T'];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([header, ...PRODUCTS]);
+  ws['!cols'] = [{wch:12}, {wch:36}, {wch:8}, {wch:8}, {wch:8}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Produk');
+  XLSX.writeFile(wb, `Produk_UPP_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Data produk diekspor');
+}
+
+/** Upload handler */
+function handleFile(file){
+  if (!file) return;
+  const ext = file.name.toLowerCase().split('.').pop();
+  if (!['xlsx','xls','csv'].includes(ext)){
+    toast('Format harus .xlsx, .xls, atau .csv', true);
+    return;
+  }
+
+  const info = $('fileInfo');
+  info.classList.add('show');
+  info.innerHTML = `⏳ Membaca <b>${file.name}</b>…`;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const newItems = parseWorkbook(e.target.result);
+      if (newItems.length === 0){
+        info.innerHTML = `⚠️ File <b>${file.name}</b> tidak mengandung produk valid.`;
+        toast('Tidak ada produk valid', true);
+        return;
+      }
+      const before = PRODUCTS.length;
+      mergeProducts(newItems);
+      const after = PRODUCTS.length;
+      const added = after - before;
+      const updated = newItems.length - added;
+
+      info.innerHTML = `✅ <b>${file.name}</b><br>
+        ${newItems.length} produk dibaca · <b>${added}</b> baru · ${updated} diperbarui<br>
+        Total sekarang: <b>${after}</b> produk`;
+
+      toast(`${newItems.length} produk di-import`);
+
+      // Auto-load produk pertama dari file
+      const first = newItems[0];
+      $('kode').value = first[0];
+      $('nama').value = first[1];
+      $('p').value = first[2];
+      $('l').value = first[3];
+      $('t').value = first[4];
+      run();
+    } catch (err){
+      console.error(err);
+      info.innerHTML = `❌ Gagal: ${err.message}`;
+      toast('Gagal baca file: ' + err.message, true);
+    }
+  };
+  reader.onerror = () => {
+    info.innerHTML = '❌ Gagal membaca file.';
+    toast('Gagal baca file', true);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* Drop zone */
+const dropZone = $('dropZone');
+const fileInput = $('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+  fileInput.value = '';
+});
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+
+$('btnDownloadTpl').addEventListener('click', downloadTemplate);
+$('btnExportAll').addEventListener('click', exportAllProducts);
+
+/* ============================================================
+   EVENT WIRING
+   ============================================================ */
+document.querySelectorAll('#alignChips .align-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#alignChips .align-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    ALIGN = chip.dataset.align;
+    run();
+  });
+});
+
+document.querySelectorAll('#seqChips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    $('sequence').value = chip.dataset.seq;
+    document.querySelectorAll('#seqChips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    run();
+  });
+});
+
+document.querySelectorAll('.viewbtns [data-view]').forEach(btn => {
+  btn.addEventListener('click', () => setView(btn.dataset.view));
+});
+$('spin').addEventListener('click', e => {
+  spinOn = !spinOn;
+  e.target.classList.toggle('on', spinOn);
+});
+
+$('productSearch').addEventListener('input', e => {
+  const found = PRODUCTS.find(([k, n]) => `${k} — ${n}` === e.target.value);
+  if (found){
+    $('kode').value = found[0]; $('nama').value = found[1];
+    $('p').value = found[2]; $('l').value = found[3]; $('t').value = found[4];
+    run();
+  }
+});
+
+$('palletPreset').addEventListener('change', e => {
+  const v = e.target.value; if (v === 'custom') return;
+  const [p, l, h] = v.split(',').map(Number);
+  $('palletP').value = p; $('palletL').value = l; $('palletH').value = h;
+  $('inclPallet').checked = false;
+  run();
+});
+
+let debounce;
+['p','l','t','palletP','palletL','palletH','sequence'].forEach(id => {
+  $(id).addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(run, 240); });
+});
+['inclPallet','slotA','slotB'].forEach(id => $(id).addEventListener('change', run));
+
+$('snapToggle').addEventListener('change', e => snapGridOn = e.target.checked);
+$('showBounds').addEventListener('change', e => {
+  showBounds = e.target.checked;
+  if (boundsBox) boundsBox.visible = showBounds;
+});
+
+$('btnRotate').addEventListener('click', rotateSelected);
+$('btnDel').addEventListener('click', deleteSelected);
+$('btnDup').addEventListener('click', dupSelected);
+$('btnAdd').addEventListener('click', addFreeCarton);
+$('btnReset').addEventListener('click', () => { run(); selectCarton(null); toast('Reset auto layout'); });
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+const VIEWS = {
+  iso:   [1, 0.88, 1.15],
+  front: [0, 0.28, 1],
+  side:  [1, 0.28, 0],
+  back:  [0, 0.28, -1],
+  top:   [0.0015, 1, 0.0015]
+};
+
+function frameScene(dirVec){
+  if (!world) return;
+  const box = new THREE.Box3().setFromObject(world);
+  if (box.isEmpty()) return;
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const radius = size.length() / 2;
+  const dist = (radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.12;
+  const dir = dirVec.clone().normalize();
+  controls.target.copy(center);
+  camera.position.copy(center).add(dir.multiplyScalar(dist));
+  camera.near = Math.max(1, dist / 400);
+  camera.far = dist * 12;
+  camera.updateProjectionMatrix();
+  controls.update();
+}
+
+function setView(name){
+  frameScene(new THREE.Vector3(...VIEWS[name]));
+  document.querySelectorAll('.viewbtns [data-view]').forEach(b => {
+    b.classList.toggle('on', b.dataset.view === name);
+  });
+}
+
+/* ============================================================
+   MAIN
+   ============================================================ */
+function computeUPP(layers, seq, cntA, cntB){
+  let upp = 0;
+  const assigns = [];
+  for (let i = 0; i < layers; i++){
+    const p = seq[i % seq.length];
+    assigns.push(p);
+    upp += (p === 'A') ? cntA : cntB;
+  }
+  return { upp, assigns };
+}
+
+function run(){
+  const P = num('p'), L = num('l'), T = num('t');
+  const W = num('palletP'), D = num('palletL'), Hmax = num('palletH');
+  const inclPallet = $('inclPallet').checked;
+  const modeA = $('slotA').value;
+  const modeB = $('slotB').value;
+  const seqArr = (($('sequence').value || 'AB').toUpperCase().replace(/[^AB]/g, '') || 'AB').split('');
+  $('sequence').value = seqArr.join('');
+
+  const warn = $('warn');
+  warn.style.display = 'none';
+
+  if (!(P > 0 && L > 0 && T > 0 && W > 0 && D > 0 && Hmax > 0)){
+    $('uppVal').textContent = '—';
+    $('stats').innerHTML = '';
+    warn.textContent = 'Isi semua dimensi dengan angka > 0.';
+    warn.style.display = 'block';
+    return;
+  }
+
+  const usableH = inclPallet ? Math.max(0, Hmax - PALLET_H) : Hmax;
+  const layers = Math.floor((usableH + EPS) / T);
+
+  const layoutA = packByMode(W, D, P, L, modeA, ALIGN);
+  const layoutB = packByMode(W, D, P, L, modeB, ALIGN);
+
+  const { upp, assigns } = computeUPP(layers, seqArr, layoutA.count, layoutB.count);
+
+  currentLayout = {
+    palletW: W, palletD: D,
+    cartonP: P, cartonL: L, cartonT: T,
+    layoutA, layoutB,
+    layerAssignments: assigns,
+    layers, upp
+  };
+
+  $('uppName').innerHTML =
+    `<span class="upp-kode">${$('kode').value || '—'}</span>${$('nama').value || ''}`;
+
+  const nA = assigns.filter(x => x === 'A').length;
+  const nB = assigns.filter(x => x === 'B').length;
+
+  $('stats').innerHTML = `
+    <div class="stat"><span>Slot A / layer</span><b>${layoutA.count}</b></div>
+    <div class="stat"><span>Slot B / layer</span><b>${layoutB.count}</b></div>
+    <div class="stat"><span>Layer A : B</span><b class="sm">${nA} : ${nB}</b></div>
+    <div class="stat"><span>Total Layer</span><b>${layers}</b></div>
+    <div class="stat"><span>Tinggi</span><b class="sm">${fmt(layers * T)} cm</b></div>
+    <div class="stat"><span>Total UPP</span><b>${upp.toLocaleString('id-ID')}</b></div>
+  `;
+
+  $('cntA').textContent = layoutA.count + ' ktn';
+  $('cntB').textContent = layoutB.count + ' ktn';
+
+  if (layers === 0){
+    warn.textContent = 'Karton tidak muat.';
+    warn.style.display = 'block';
+  } else if (layoutA.count === 0 || layoutB.count === 0){
+    warn.textContent = 'Salah satu slot tidak menghasilkan karton.';
+    warn.style.display = 'block';
+  }
+
+  // draw previews (dipanggil dari versi sebelumnya)
+  drawPreview('pvA', layoutA, W, D, P, true);
+  drawPreview('pvB', layoutB, W, D, P, false);
+
+  rebuildScene(currentLayout);
+
+  const curDir = camera.position.clone().sub(controls.target);
+  if (curDir.lengthSq() < 1) curDir.set(1, 0.9, 1.1);
+  frameScene(curDir);
+}
+
+/* Preview 2D mini */
+function drawPreview(canvasId, layout, W, D, P, isA){
+  const c = document.getElementById(canvasId);
+  const ctx = c.getContext('2d');
+  const cw = c.width, ch = c.height;
+  ctx.clearRect(0, 0, cw, ch);
+  const pad = 8;
+  const scale = Math.min((cw - pad * 2) / W, (ch - pad * 2) / D);
+  const ox = (cw - W * scale) / 2, oy = (ch - D * scale) / 2;
+  ctx.fillStyle = '#0a1422';
+  ctx.fillRect(ox, oy, W * scale, D * scale);
+  ctx.strokeStyle = '#2a3b5a';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(ox + 0.5, oy + 0.5, W * scale - 1, D * scale - 1);
+  if (!layout || !layout.items) return;
+  const fillN = isA ? '#34d399' : '#38bdf8';
+  const fillR = isA ? '#86efac' : '#a78bfa';
+  layout.items.forEach(it => {
+    const x = ox + (it.x - it.w / 2) * scale;
+    const z = oy + (it.z - it.d / 2) * scale;
+    const w = it.w * scale, d = it.d * scale;
+    const rotated = Math.abs(it.w - P) > 0.001;
+    ctx.fillStyle = rotated ? fillR : fillN;
+    ctx.fillRect(x, z, w, d);
+    ctx.strokeStyle = '#05101c';
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(x + 0.4, z + 0.4, w - 0.8, d - 0.8);
+  });
+}
+
+/* START */
+initThree();
+run();
+setTimeout(() => setView('iso'), 60);
+</script>
+</body>
+</html>
